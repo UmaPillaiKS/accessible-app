@@ -1,0 +1,51 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model AuditTarget {
+  id        String     @id @default(cuid())
+  url       String     @unique
+  label     String?
+  email     String?
+  monitor   Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  runs      AuditRun[]
+}
+
+model AuditRun {
+  id            String        @id @default(cuid())
+  targetId      String
+  target        AuditTarget   @relation(fields: [targetId], references: [id])
+  ranAt         DateTime      @default(now())
+  durationMs    Int
+  score         Int
+  criticalCount Int
+  warningCount  Int
+  passedCount   Int
+  issues        AuditIssue[]
+  report        SharedReport?
+}
+
+model AuditIssue {
+  id            String   @id @default(cuid())
+  runId         String
+  run           AuditRun @relation(fields: [runId], references: [id])
+  ruleId        String
+  severity      String
+  element       String
+  description   String
+  fixSuggestion String
+}
+
+model SharedReport {
+  id        String   @id @default(cuid())
+  runId     String   @unique
+  run       AuditRun @relation(fields: [runId], references: [id])
+  slug      String   @unique
+  createdAt DateTime @default(now())
+}
